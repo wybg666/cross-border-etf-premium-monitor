@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>标普 · 纳指场内 ETF 溢价监测</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./cross-border-etf-premium.css?v=20261010-3" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">ETF</span>
+        <div>
+          <p class="eyebrow">CROSS-BORDER ETF PREMIUM RADAR</p>
+          <h1>标普 · 纳指场内 ETF 溢价监测</h1>
+            <p class="subtitle">内置 17 只 ETF：12 只纳斯达克 100、1 只纳斯达克科技、4 只标普 500；不是全市场清单。</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="refresh-meta">
+          <span>数据生成：<b id="etfPremiumUpdatedAt">--</b></span>
+          <span>下次刷新：<b id="etfPremiumCountdown">30 秒</b></span>
+        </div>
+        <button id="etfPremiumRefreshBtn" type="button">↻ 立即刷新</button>
+        <a class="ghost-link" href="#methodTitle">口径说明</a>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <div id="etfPremiumStartupHint" class="notice" role="status">
+        页面尚未初始化。请在项目根目录双击 start.bat，再访问终端显示的本机地址；不要仅打开 HTML 文件或静态预览。
+      </div>
+      <section class="hero-panel" aria-labelledby="overviewTitle">
+        <div>
+            <p class="eyebrow">PUBLIC SNAPSHOT · TENCENT FINANCE</p>
+          <h2 id="overviewTitle">先看偏离，再看流动性与数据时点</h2>
+            <p>监测值 =（场内最新价 ÷ IOPV 参考估值 − 1）× 100%。正值为溢价，负值为折价；默认按溢价从高到低排列。行情可能延迟。</p>
+        </div>
+        <div class="formula-card" aria-label="溢价率口径">
+          <span>统一口径</span>
+          <strong>最新价 / IOPV − 1</strong>
+          <small>腾讯提供 IOPV 与溢价率校验字段；不以单位净值 NAV 替代 IOPV。</small>
+        </div>
+      </section>
+
+      <div id="etfPremiumNotice" class="notice" role="status" aria-live="polite" hidden></div>
+
+      <section id="etfPremiumSummary" class="summary-grid" aria-label="ETF 溢价监测摘要" aria-live="polite">
+        <article class="summary-card"><span>监测标的</span><strong>--</strong><small>等待行情</small></article>
+        <article class="summary-card"><span>可计算估值</span><strong>--</strong><small>等待行情</small></article>
+        <article class="summary-card"><span>≥ 2% 告警</span><strong>--</strong><small>等待行情</small></article>
+        <article class="summary-card"><span>最高溢价</span><strong>--</strong><small>等待行情</small></article>
+        <article class="summary-card"><span>合计成交额</span><strong>--</strong><small>等待行情</small></article>
+      </section>
+
+      <section class="panel controls-panel" aria-labelledby="filtersTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">FILTER &amp; RANK</p>
+            <h2 id="filtersTitle">筛选与排序</h2>
+          </div>
+          <span id="etfPremiumVisibleCount" class="result-count">--</span>
+        </div>
+        <div class="filters">
+          <label>
+            <span>跟踪指数</span>
+            <select id="etfPremiumIndexFilter">
+              <option value="all">全部指数</option>
+              <option value="nasdaq100">纳斯达克 100</option>
+              <option value="nasdaqtech">纳斯达克科技市值加权</option>
+              <option value="sp500">标普 500</option>
+            </select>
+          </label>
+          <label>
+            <span>折溢价区间</span>
+            <select id="etfPremiumBandFilter">
+              <option value="all">全部区间</option>
+              <option value="extreme">极高溢价（≥ 10%）</option>
+              <option value="high">高溢价（5%–10%）</option>
+              <option value="elevated">告警（2%–5%）</option>
+              <option value="watch">偏高（0.5%–2%）</option>
+              <option value="normal">平价附近（±0.5%）</option>
+              <option value="discount">折价（≤ -0.5%）</option>
+              <option value="missing">无法计算</option>
+            </select>
+          </label>
+          <label>
+            <span>数据状态</span>
+            <select id="etfPremiumQualityFilter">
+              <option value="all">全部状态</option>
+              <option value="live">报价时效通过</option>
+              <option value="closed">盘后快照</option>
+              <option value="delayed">行情陈旧</option>
+              <option value="inconsistent">口径异常</option>
+              <option value="missing">数据缺失</option>
+              <option value="unknown">日历待更新</option>
+            </select>
+          </label>
+          <label class="search-field">
+            <span>代码或名称</span>
+            <input id="etfPremiumSearch" type="search" autocomplete="off" placeholder="例如 513100 / 嘉实" />
+          </label>
+          <label class="check-field">
+            <input id="etfPremiumAlertOnly" type="checkbox" />
+            <span>仅看 ≥ 2% 告警</span>
+          </label>
+          <button id="etfPremiumReset" class="secondary-btn" type="button">重置筛选</button>
+        </div>
+      </section>
+
+      <section class="panel leaderboard-panel" aria-labelledby="leadersTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">PREMIUM LEADERS</p>
+            <h2 id="leadersTitle">当前溢价 Top 5</h2>
+            <p>条形长度按当前可见标的中的最高溢价归一化；精确值以右侧标签和下表为准。</p>
+          </div>
+          <span id="etfPremiumReferenceAt" class="muted">IOPV 独立时点：未提供</span>
+        </div>
+        <div id="etfPremiumLeaders" class="leaderboard" aria-live="polite">
+          <p class="empty-state">等待有效 IOPV。</p>
+        </div>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="tableTitle">
+        <div class="panel-heading table-heading">
+          <div>
+            <p class="eyebrow">ALL MONITORED FUNDS</p>
+            <h2 id="tableTitle">全部监测标的</h2>
+            <p>点击带箭头的表头可按“降序 → 升序 → 默认”切换；缺失值始终排在末尾。</p>
+          </div>
+          <div class="legend" aria-label="溢价颜色说明">
+            <span><i class="legend-dot extreme"></i>≥ 10%</span>
+            <span><i class="legend-dot high"></i>5%–10%</span>
+            <span><i class="legend-dot normal"></i>±0.5%</span>
+            <span><i class="legend-dot discount"></i>折价</span>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">指数</th>
+                <th scope="col">代码 / 名称</th>
+                <th scope="col"><button class="sort-btn" type="button" data-sort="marketPrice">场内价 <span>↕</span></button></th>
+                <th scope="col"><button class="sort-btn" type="button" data-sort="iopv">IOPV <span>↕</span></button></th>
+                <th scope="col" aria-sort="none"><button class="sort-btn active" type="button" data-sort="premiumPct">溢价率 <span>↓</span></button></th>
+                <th scope="col"><button class="sort-btn" type="button" data-sort="dayChangePct">日涨跌 <span>↕</span></button></th>
+                <th scope="col"><button class="sort-btn" type="button" data-sort="amount">成交额 <span>↕</span></button></th>
+                <th scope="col"><button class="sort-btn" type="button" data-sort="spreadPct">买卖价差 <span>↕</span></button></th>
+                <th scope="col">数据时点</th>
+                <th scope="col">质量状态</th>
+              </tr>
+            </thead>
+            <tbody id="etfPremiumRows">
+              <tr><td colspan="10" class="empty-state">正在获取 ETF 行情与 IOPV。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="etfPremiumEmpty" class="empty-state table-empty" hidden>当前筛选条件下没有标的。</p>
+      </section>
+
+      <section class="methodology" aria-labelledby="methodTitle">
+        <div>
+          <p class="eyebrow">DATA QUALITY NOTES</p>
+          <h2 id="methodTitle">监测口径与边界</h2>
+        </div>
+        <ul>
+          <li>场内价、IOPV 与成交额由腾讯财经公开行情接口返回。字段 <code>30</code> 为报价时间，<code>78</code> 为 IOPV，<code>81</code> 为另一净值字段（不用于本工具计算）。接口没有提供 IOPV 独立日期或时分秒，页面不会用报价时间代替估值时间。</li>
+          <li>标普与纳指交易时段和 A 股不重叠。海外市场休市期间的 IOPV 可能主要基于最近收盘、汇率及基金披露口径，监测值不等同于可实现套利收益。</li>
+          <li>关键字段缺失、非正数或无法与数据方溢价率对账时，不显示溢价。服务器缓存 20 秒；刷新失败不跨批次回退旧值，浏览器连接失败会清空旧表。</li>
+          <li>“报价时效通过”仅检查报价包时间，不能证明 IOPV 新鲜或估值与价格同步。默认 ≥2% 只是页面提示，不是买卖信号或推送通知。</li>
+          <li>交易日历只内置 2026 年；其他年份标记“日历待更新”。盘后、延迟数据仍可能参与排行，请检查每行时点和状态。</li>
+          <li>159509 跟踪纳斯达克科技市值加权指数，不与纳斯达克 100 等同。此工具不提供投资建议，也不保证可实现套利收益。</li>
+          <li>数据源：腾讯财经公开行情（qt.gtimg.cn）；页面只读，不连接证券账户，也不执行交易。</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="./cross-border-etf-premium.js?v=20261010-3"></script>
+  </body>
+</html>
